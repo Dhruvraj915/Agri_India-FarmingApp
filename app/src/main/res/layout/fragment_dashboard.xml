@@ -24,11 +24,12 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
-            <!-- Your Weather Card Content -->
+
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="12dp">
+
                 <ImageView
                     android:id="@+id/weathIconImageWeathFrag"
                     android:layout_width="80dp"
@@ -37,6 +38,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
+
                 <TextView
                     android:id="@+id/weatherCityTitle"
                     android:layout_width="0dp"
@@ -51,6 +53,7 @@
                     app:layout_constraintStart_toEndOf="@id/weathIconImageWeathFrag"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintVertical_chainStyle="packed"/>
+
                 <TextView
                     android:id="@+id/weathTempTextWeathFrag"
                     android:layout_width="0dp"
@@ -59,10 +62,37 @@
                     android:text="- C"
                     android:textColor="@color/fontColor"
                     android:textSize="18sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintBottom_toTopOf="@id/windTextWeathFrag"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/weathIconImageWeathFrag"
                     app:layout_constraintTop_toBottomOf="@id/weatherCityTitle" />
+
+                <!-- MAKE SURE THIS VIEW EXISTS WITH THIS ID -->
+                <TextView
+                    android:id="@+id/windTextWeathFrag"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="Wind: - km/h"
+                    android:textColor="@color/fontColor"
+                    app:layout_constraintBottom_toTopOf="@id/humidityTextWeathFrag"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/weathIconImageWeathFrag"
+                    app:layout_constraintTop_toBottomOf="@id/weathTempTextWeathFrag" />
+
+                <!-- MAKE SURE THIS VIEW EXISTS WITH THIS ID -->
+                <TextView
+                    android:id="@+id/humidityTextWeathFrag"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="Humidity: - %"
+                    android:textColor="@color/fontColor"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/weathIconImageWeathFrag"
+                    app:layout_constraintTop_toBottomOf="@id/windTextWeathFrag" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
 

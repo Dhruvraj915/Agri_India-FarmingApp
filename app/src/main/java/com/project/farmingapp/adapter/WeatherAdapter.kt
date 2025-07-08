@@ -12,17 +12,17 @@ import com.bumptech.glide.Glide
 import com.project.farmingapp.R
 import com.project.farmingapp.model.data.WeatherList
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
 import java.util.*
 
-class WeatherAdapter(val context: Context, val weatherrootdatas: List<WeatherList>) :
+// The constructor now takes a MutableList, so we can change it later.
+class WeatherAdapter(private val context: Context, private val weatherItems: MutableList<WeatherList>) :
     RecyclerView.Adapter<WeatherAdapter.WeatherViewHolder>() {
-    class WeatherViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var wedate = itemView.findViewById<TextView>(R.id.weatherDate)
-        var wedesc = itemView.findViewById<TextView>(R.id.weatherDescription)
-        var wemain = itemView.findViewById<TextView>(R.id.weatherTemperature)
-        var welogo = itemView.findViewById<ImageView>(R.id.weatherIcon)
 
+    class WeatherViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val weatherDate: TextView = itemView.findViewById(R.id.weatherDate)
+        val weatherDescription: TextView = itemView.findViewById(R.id.weatherDescription)
+        val weatherTemperature: TextView = itemView.findViewById(R.id.weatherTemperature)
+        val weatherIcon: ImageView = itemView.findViewById(R.id.weatherIcon)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WeatherViewHolder {
@@ -31,35 +31,43 @@ class WeatherAdapter(val context: Context, val weatherrootdatas: List<WeatherLis
     }
 
     override fun getItemCount(): Int {
-        return weatherrootdatas.size
+        return weatherItems.size
     }
 
+    override fun onBindViewHolder(holder: WeatherViewHolder, position: Int) {
+        val currentItem = weatherItems[position]
 
-    override fun onBindViewHolder(holder: WeatherAdapter.WeatherViewHolder, position: Int) {
-        val weathernew = weatherrootdatas[position]
+        // Date formatting logic (your original code was correct)
+        try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val date: Date? = inputFormat.parse(currentItem.dt_txt)
+            holder.weatherDate.text = if (date != null) outputFormat.format(date) else "N/A"
+        } catch (e: Exception) {
+            holder.weatherDate.text = "Invalid Date"
+            Log.e("WeatherAdapter", "Date parsing failed", e)
+        }
 
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd")
-        val outputFormat = SimpleDateFormat("dd/MM/yyyy")
+        val weatherInfo = currentItem.weather[0]
+        val mainInfo = currentItem.main
 
-        val date: Date = inputFormat.parse(weathernew.dt_txt.slice(0..9))
-        val outputDate = outputFormat.format(date)
+        // Update UI elements
+        holder.weatherDescription.text = weatherInfo.description.replaceFirstChar { it.uppercase() }
+        holder.weatherTemperature.text = "${mainInfo.temp.toInt()}°C"
 
-        Log.d("New Date", outputDate.toString())
-
-        val we = weathernew.weather[0]
-        val we2 = weathernew.main
-        holder.wedate.text = outputDate
-        holder.wedesc.text = we.description.capitalize()
-        Log.d("weatherTemp", we2.temp.toString())
-        val Temp = we2.temp - 273.15
-        holder.wemain.text = Temp.toInt().toString() + "\u2103"
-
-        var iconcode = weathernew.weather[0].icon.toString()
-
-        var iconurl = "https://openweathermap.org/img/w/" + iconcode + ".png";
-        Log.d("weatherlogo", iconcode.toString())
+        // Load weather icon with Glide
+        val iconCode = weatherInfo.icon
+        val iconUrl = "https://openweathermap.org/img/wn/$iconCode@2x.png"
         Glide.with(holder.itemView.context)
-            .load(iconurl)
-            .into(holder.welogo)
+            .load(iconUrl)
+            .into(holder.weatherIcon)
+    }
+
+    // THIS IS THE NEW, IMPORTANT FUNCTION
+    // This allows the WeatherFragment to update the list of weather forecasts.
+    fun updateData(newItems: List<WeatherList>) {
+        weatherItems.clear()
+        weatherItems.addAll(newItems)
+        notifyDataSetChanged() // This tells the RecyclerView to redraw itself with the new data
     }
 }

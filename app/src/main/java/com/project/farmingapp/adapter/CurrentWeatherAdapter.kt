@@ -10,10 +10,13 @@ import com.bumptech.glide.Glide
 import com.project.farmingapp.R
 import com.project.farmingapp.databinding.SingleCurrentweatherBinding
 import com.project.farmingapp.model.data.WeatherList
+import java.text.SimpleDateFormat
+import java.util.*
 
+// The constructor now takes a MutableList, so we can change it later.
 class CurrentWeatherAdapter(
     private val context: Context,
-    private val weatherrootdatas: List<WeatherList>
+    private val weatherItems: MutableList<WeatherList>
 ) : RecyclerView.Adapter<CurrentWeatherAdapter.CurrentWeatherViewHolder>() {
 
     inner class CurrentWeatherViewHolder(val binding: SingleCurrentweatherBinding) :
@@ -28,31 +31,47 @@ class CurrentWeatherAdapter(
         return CurrentWeatherViewHolder(binding)
     }
 
-    override fun getItemCount(): Int = weatherrootdatas.size
+    override fun getItemCount(): Int = weatherItems.size
 
     override fun onBindViewHolder(holder: CurrentWeatherViewHolder, position: Int) {
-        val weather = weatherrootdatas[position]
+        val currentItem = weatherItems[position]
         val binding = holder.binding
 
-        binding.temp.text = "${(weather.main.temp - 273.15).toInt()}℃"
-        binding.desc.text = weather.weather[0].description.capitalize()
-        binding.todayTitle.text = "Today, " + weather.dt_txt.slice(10..15)
+        // Set the text for temperature, description, etc.
+        binding.temp.text = "${currentItem.main.temp.toInt()}°C"
+        binding.desc.text = currentItem.weather[0].description.replaceFirstChar { it.uppercase() }
 
+        // Safely format the time
         try {
-            Log.d("Something", weather.dt_txt.slice(10..weather.dt_txt.length - 1))
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("HH:mm", Locale.getDefault()) // Format for "15:00"
+            val date: Date? = inputFormat.parse(currentItem.dt_txt)
+            binding.todayTitle.text = if (date != null) outputFormat.format(date) else "N/A"
         } catch (e: Exception) {
-            Log.e("SliceError", e.message ?: "Invalid datetime format")
+            binding.todayTitle.text = "Invalid Time"
+            Log.e("CurrentWeatherAdapter", "Time parsing failed", e)
         }
 
-        binding.minTemp.text = "${(weather.main.temp_min.toDouble() - 273.1).toInt()}℃"
-        binding.maxTemp.text = "${(weather.main.temp_max.toDouble() - 273.1).toInt()}℃"
-        binding.humidity.text = "${weather.main.humidity}%"
+        // Set min/max temp and humidity
+        binding.minTemp.text = "${currentItem.main.temp_min.toInt()}°C"
+        binding.maxTemp.text = "${currentItem.main.temp_max.toInt()}°C"
+        binding.humidity.text = "${currentItem.main.humidity}%"
 
-        val iconUrl = "https://openweathermap.org/img/w/${weather.weather[0].icon}.png"
+        // Load weather icon with Glide
+        val iconUrl = "https://openweathermap.org/img/wn/${currentItem.weather[0].icon}@2x.png" // Using bigger icon
         Glide.with(context)
             .load(iconUrl)
             .into(binding.icon)
 
+        // Apply animation
         binding.currentWeatherContainer.animation = AnimationUtils.loadAnimation(context, R.anim.fade_scale)
+    }
+
+    // THIS IS THE NEW, IMPORTANT FUNCTION
+    // This allows the WeatherFragment to update the list of today's forecasts.
+    fun updateData(newItems: List<WeatherList>) {
+        weatherItems.clear()
+        weatherItems.addAll(newItems)
+        notifyDataSetChanged() // This tells the RecyclerView to redraw itself
     }
 }

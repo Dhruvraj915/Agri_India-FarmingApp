@@ -61,7 +61,8 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 
         setupToolbarAndDrawer()
         setupBottomNavigation()
-        setupLocationServices() // RESTORED
+        setupLocationServices()
+        getLocation() // <--- ADD THIS LINE to automatically fetch location on startup.
         handleAppLaunch()
         observeUserData()
 
@@ -185,14 +186,15 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
-                    // You have the location! You can now use it with your WeatherViewModel
-                    // For example:
-                    // weatherViewModel.fetchWeatherData(location.latitude, location.longitude)
-                    Toast.makeText(this, "Location: ${location.latitude}, ${location.longitude}", Toast.LENGTH_SHORT).show()
+                    // THIS IS THE FIX: Call the one, correct function.
+                    weatherViewModel.fetchWeatherData(location.latitude, location.longitude)
+                    Toast.makeText(this, "Fetching weather...", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this, "Could not get location. Please try again.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Could not get location. Retrying.", Toast.LENGTH_SHORT).show()
                 }
             }
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 }
