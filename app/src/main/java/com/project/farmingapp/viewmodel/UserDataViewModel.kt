@@ -8,85 +8,71 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.project.farmingapp.R
-import com.project.farmingapp.view.user.UserFragment
-import kotlinx.android.synthetic.main.fragment_user.*
-import kotlinx.android.synthetic.main.nav_header.view.*
-import kotlinx.coroutines.channels.consumesAll
 
 class UserDataViewModel : ViewModel() {
 
-    var userliveData = MutableLiveData<DocumentSnapshot>()
+    val userLiveData = MutableLiveData<DocumentSnapshot>()
+    private val firebaseFirestore = FirebaseFirestore.getInstance()
 
     fun getUserData(userId: String) {
-        val firebaseFireStore = FirebaseFirestore.getInstance()
-
-        firebaseFireStore.collection("users").document(userId)
+        firebaseFirestore.collection("users")
+            .document(userId)
             .get()
-            .addOnCompleteListener {
-                userliveData.value = it.result
+            .addOnSuccessListener { document ->
+                userLiveData.value = document
+                Log.d("UserDataViewModel", "Fetched user data for ID: $userId")
+            }
+            .addOnFailureListener {
+                Log.e("UserDataViewModel", "Failed to fetch user data: ${it.message}", it)
             }
     }
 
     fun updateUserField(context: Context, userID: String, about: String?, city: String?) {
+        val updates = mutableMapOf<String, Any>()
 
-        if (about !=null) {
-            val firebaseFireStore = FirebaseFirestore.getInstance()
-            firebaseFireStore.collection("users").document("${userID}")
-                .update(
-                    mapOf(
-                        "about" to about
-                    )
-                )
+        if (!about.isNullOrEmpty()) updates["about"] = about
+        if (!city.isNullOrEmpty()) updates["city"] = city
+
+        if (updates.isNotEmpty()) {
+            firebaseFirestore.collection("users")
+                .document(userID)
+                .update(updates)
                 .addOnSuccessListener {
-                    Log.d("UserDataViewModel", "User About Data Updated")
+                    Toast.makeText(context, "Profile Updated", Toast.LENGTH_SHORT).show()
+                    Log.d("UserDataViewModel", "Updated fields: $updates")
                     getUserData(userID)
                 }
-                .addOnFailureListener {
-                    Log.d("UserDataViewModel", "Failed to Update About User Data")
-                    Toast.makeText(context, "Failed to Update About. Try Again!", Toast.LENGTH_SHORT).show()
+                .addOnFailureListener { e ->
+                    Toast.makeText(context, "Failed to update profile. Try again!", Toast.LENGTH_SHORT).show()
+                    Log.e("UserDataViewModel", "Update failed: ${e.message}", e)
                 }
+        } else {
+            Toast.makeText(context, "Nothing to update.", Toast.LENGTH_SHORT).show()
         }
-
-        if (city !=null) {
-            val firebaseFireStore = FirebaseFirestore.getInstance()
-            firebaseFireStore.collection("users").document("${userID}")
-                .update(
-                    mapOf(
-                        "city" to city
-                    )
-                )
-                .addOnSuccessListener {
-                    Log.d("UserDataViewModel", "User City Data Updated")
-                    getUserData(userID)
-                }
-                .addOnFailureListener {
-                    Log.d("UserDataViewModel", "Failed to Update City User Data")
-                    Toast.makeText(context, "Failed to Update City Try Again!", Toast.LENGTH_SHORT).show()
-                }
-        }
-        Toast.makeText(context, "Profile Updated", Toast.LENGTH_SHORT).show()
     }
 
-    fun deleteUserPost(userId: String, postId: String){
-        val firebaseFirestore = FirebaseFirestore.getInstance()
-
-        firebaseFirestore.collection("posts").document(postId)
+    fun deleteUserPost(userId: String, postId: String) {
+        firebaseFirestore.collection("posts")
+            .document(postId)
             .delete()
             .addOnSuccessListener {
-                Log.d("User Data View Model", "Post Deleted")
-                UserProfilePostsViewModel().getAllPosts(userId)
-                firebaseFirestore.collection("users").document(userId).update("posts", FieldValue.arrayRemove("${postId}"))
+                Log.d("UserDataViewModel", "Post $postId deleted successfully.")
+
+                // Remove post from user's post list
+                firebaseFirestore.collection("users")
+                    .document(userId)
+                    .update("posts", FieldValue.arrayRemove(postId))
                     .addOnSuccessListener {
-                        Log.d("UserDataViewModel", "Successfully Deleted User Doc Post")
+                        Log.d("UserDataViewModel", "Removed $postId from user's post array.")
                         getUserData(userId)
                     }
-                    .addOnFailureListener{
-                        Log.e("UserDataViewModel", "Failed to delete post from User Doc")
+                    .addOnFailureListener { e ->
+                        Log.e("UserDataViewModel", "Failed to update user doc: ${e.message}", e)
                     }
+
             }
-            .addOnFailureListener {
-                Log.d("User Data View Model", "Failed to delete post")
+            .addOnFailureListener { e ->
+                Log.e("UserDataViewModel", "Failed to delete post $postId: ${e.message}", e)
             }
     }
 }

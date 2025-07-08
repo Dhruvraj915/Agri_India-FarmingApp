@@ -1,128 +1,45 @@
+/*
 package com.project.farmingapp.view.articles
 
+import android.R.id.title
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.RotateAnimation
-import android.widget.ProgressBar
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
-import com.project.farmingapp.R
+import com.project.farmingapp.databinding.FragmentFruitsBinding
 import com.project.farmingapp.utilities.hide
 import com.project.farmingapp.utilities.show
 import com.project.farmingapp.viewmodel.ArticleListener
 import com.project.farmingapp.viewmodel.ArticleViewModel
-import kotlinx.android.synthetic.main.fragment_fruits.*
-
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [FruitsFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 
 class FruitsFragment : Fragment(), ArticleListener {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
+
+    private var _binding: FragmentFruitsBinding? = null
+    private val binding get() = _binding!!
+
+    private var selectedName: String? = null
     private lateinit var viewModel: ArticleViewModel
-    private var param2: String? = null
-    private var param3: String? = null
-    val desc = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-            param3 = it.getString("name")
-        }
-
-        viewModel = ViewModelProviders.of(requireActivity())
-            .get<ArticleViewModel>(ArticleViewModel::class.java)
-//        viewModel.getAllArticles(tag!!)
-
-        val tag = this.tag.toString()
-
-        Log.d("I'm called 2", viewModel.message3.value.toString())
+        selectedName = arguments?.getString("name")
+        viewModel = ViewModelProvider(requireActivity())[ArticleViewModel::class.java]
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-
-        viewModel.message1.observe(viewLifecycleOwner, Observer {
-            progressArticle.show()
-
-            val attributes: Map<String, String> = it.get("attributes") as Map<String, String>
-            val desc = it.get("description").toString()
-
-            Log.d("I'm Called", "Yes")
-            val diseases: List<String> = it.get("diseases") as List<String>
-
-            Log.d("Diseases2", it.get("diseases").toString())
-            tempTextFruitFragArt.text = attributes.get("Temperature").toString()
-            monthTextFruitFragArt.text = attributes.get("Time").toString()
-
-            titleTextFruitFragArt.text = it.get("title").toString()
-            descTextValueFruitFragArt.text = desc
-            processTextValueFruitFragArt.text = it.get("process").toString()
-            soilTextValueFruitFragArt.text = it.get("soil").toString()
-            stateTextValueFruitFragArt.text = it.get("state").toString()
-
-            val images: List<String> = it.get("images") as List<String>
-            Glide.with(this)
-                .load(images[0])
-                .into(imageFruitFragArt)
-
-            attr1ValueFruitFragArt.text = attributes.get("Weight").toString()
-            attr2ValueFruitFragArt.text = attributes.get("Vitamins").toString()
-            attr3ValueFruitFragArt.text = attributes.get("Tree Height").toString()
-            attr4ValueFruitFragArt.text = attributes.get("growthTime").toString()
-
-            diseaseTextValueFruitFragArt.text = ""
-            for (i in 0..diseases.size - 1) {
-
-                diseaseTextValueFruitFragArt.text =
-                    diseaseTextValueFruitFragArt.text.toString() +
-                            (i + 1).toString() + ". " + diseases[i].toString() + "\n"
-            }
-            progressArticle.hide()
-        })
-
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_fruits, container, false)
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FruitsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FruitsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    ): View {
+        _binding = FragmentFruitsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -131,105 +48,196 @@ class FruitsFragment : Fragment(), ArticleListener {
         setHasOptionsMenu(true)
         (activity as AppCompatActivity).supportActionBar?.title = "Articles"
 
-        val params = descTextTitleFruitFragArt.layoutParams
+        binding.descToggleBtnFruitFragArt.setOnClickListener {
+            val isExpanded = binding.descTextValueFruitFragArt.maxLines == Int.MAX_VALUE
+            binding.descTextValueFruitFragArt.maxLines = if (isExpanded) 3 else Int.MAX_VALUE
 
-        var toggle = 0
-
-
-        descToggleBtnFruitFragArt.setOnClickListener {
-
-            if (toggle == 0) {
-                descTextValueFruitFragArt.maxLines = Integer.MAX_VALUE
-                toggle = 1
-
-                val rotateAnim = RotateAnimation(
-                    0.0f, 180f,
-                    RotateAnimation.RELATIVE_TO_SELF, 0.5f,
-                    RotateAnimation.RELATIVE_TO_SELF, 0.5f
-                )
-                rotateAnim.duration = 2
-                rotateAnim.fillAfter = true
-                descToggleBtnFruitFragArt.startAnimation(rotateAnim)
-            } else if (toggle == 1) {
-                descTextValueFruitFragArt.maxLines = 3
-                toggle = 0
-                val rotateAnim = RotateAnimation(
-                    180f, 0f,
-                    RotateAnimation.RELATIVE_TO_SELF, 0.5f,
-                    RotateAnimation.RELATIVE_TO_SELF, 0.5f
-                )
-                rotateAnim.duration = 2
-                rotateAnim.fillAfter = true
-                descToggleBtnFruitFragArt.startAnimation(rotateAnim)
-
+            val rotateAnim = RotateAnimation(
+                if (isExpanded) 180f else 0f,
+                if (isExpanded) 0f else 180f,
+                RotateAnimation.RELATIVE_TO_SELF, 0.5f,
+                RotateAnimation.RELATIVE_TO_SELF, 0.5f
+            ).apply {
+                duration = 200
+                fillAfter = true
             }
+            binding.descToggleBtnFruitFragArt.startAnimation(rotateAnim)
         }
 
+        val articles = viewModel.message3.value ?: return
 
-        // New
-        val newData = viewModel.message3.value
+        for (data in articles) {
+            val dataMap = data.data
+            if (dataMap != null) {
+                val attributes = dataMap["attributes"] as? Map<*, *>
+                val diseases = dataMap["diseases"] as? List<*>
+                val images = dataMap["images"] as? List<*>
 
-        Log.d("New data length", newData!!.size.toString())
-        val newDataLength = newData!!.size
+                binding.titleTextFruitFragArt.text = title
+                binding.descTextValueFruitFragArt.text = dataMap["description"]?.toString() ?: "-"
+                binding.processTextValueFruitFragArt.text = dataMap["process"]?.toString() ?: "-"
+                binding.soilTextValueFruitFragArt.text = dataMap["soil"]?.toString() ?: "-"
+                binding.stateTextValueFruitFragArt.text = dataMap["state"]?.toString() ?: "-"
 
-        for (a in 0 until newDataLength) {
-            if (newData[a].data!!.get("title") == this.tag) {
+                binding.tempTextFruitFragArt.text = attributes?.get("Temperature")?.toString() ?: "-"
+                binding.monthTextFruitFragArt.text = attributes?.get("Time")?.toString() ?: "-"
+                binding.attr1ValueFruitFragArt.text = attributes?.get("Weight")?.toString() ?: "-"
+                binding.attr2ValueFruitFragArt.text = attributes?.get("Vitamins")?.toString() ?: "-"
+                binding.attr3ValueFruitFragArt.text = attributes?.get("Tree Height")?.toString() ?: "-"
+                binding.attr4ValueFruitFragArt.text = attributes?.get("growthTime")?.toString() ?: "-"
 
+                val diseaseText = diseases?.filterIsInstance<String>()?.withIndex()?.joinToString("\n") {
+                    "${it.index + 1}. ${it.value}"
+                } ?: "-"
+                binding.diseaseTextValueFruitFragArt.text = diseaseText
 
-                var data = newData[a].data
-
-                val attributes: Map<String, String> =
-                    data!!.get("attributes") as Map<String, String>
-                val desc = data!!.get("description").toString()
-                val diseases: List<String> = data!!.get("diseases") as List<String>
-
-                Log.d("I'm Called3", attributes.get("Temperature").toString())
-                Log.d("I'm Called", "Yes")
-                Log.d("Diseases2", data!!.get("diseases").toString())
-
-                tempTextFruitFragArt.text = attributes.get("Temperature").toString()
-                monthTextFruitFragArt.text = attributes.get("Time").toString()
-
-                titleTextFruitFragArt.text = data!!.get("title").toString()
-                descTextValueFruitFragArt.text = desc
-                processTextValueFruitFragArt.text = data!!.get("process").toString()
-                soilTextValueFruitFragArt.text = data!!.get("soil").toString()
-                stateTextValueFruitFragArt.text = data!!.get("state").toString()
-
-                val images: List<String> = data!!.get("images") as List<String>
-                Glide.with(this)
-                    .load(images[0])
-                    .into(imageFruitFragArt)
-
-                attr1ValueFruitFragArt.text = attributes.get("Weight").toString()
-                attr2ValueFruitFragArt.text = attributes.get("Vitamins").toString()
-                attr3ValueFruitFragArt.text = attributes.get("Tree Height").toString()
-                attr4ValueFruitFragArt.text = attributes.get("growthTime").toString()
-
-                diseaseTextValueFruitFragArt.text = ""
-                for (i in 0..diseases.size - 1) {
-
-                    diseaseTextValueFruitFragArt.text =
-                        diseaseTextValueFruitFragArt.text.toString() +
-                                (i + 1).toString() + ". " + diseases[i].toString() + "\n"
+                val imageUrl = images?.firstOrNull()?.toString()
+                if (!imageUrl.isNullOrEmpty()) {
+                    Glide.with(this).load(imageUrl).into(binding.imageFruitFragArt)
                 }
-                progressArticle.hide()
+            }
+
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    override fun onStarted() {}
+    override fun onSuccess(authRepo: LiveData<String>) {
+        authRepo.observe(viewLifecycleOwner) {
+            Log.d("Fruit", "Success")
+        }
+    }
+
+    override fun onFailure(message: String) {}
+
+    companion object {
+        @JvmStatic
+        fun newInstance(name: String) = FruitsFragment().apply {
+            arguments = Bundle().apply {
+                putString("name", name)
+            }
+        }
+    }
+}
+*/
+// In .../view/articles/FruitsFragment.kt
+
+package com.project.farmingapp.view.articles
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.animation.RotateAnimation
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import com.bumptech.glide.Glide
+import com.project.farmingapp.databinding.FragmentFruitsBinding
+import com.project.farmingapp.viewmodel.ArticleViewModel
+
+class FruitsFragment : Fragment() {
+
+    private var _binding: FragmentFruitsBinding? = null
+    private val binding get() = _binding!!
+
+    private var selectedName: String? = null
+    private lateinit var viewModel: ArticleViewModel
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Get the name of the fruit to display from fragment arguments
+        arguments?.let {
+            selectedName = it.getString("name")
+        }
+        viewModel = ViewModelProvider(requireActivity())[ArticleViewModel::class.java]
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentFruitsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setHasOptionsMenu(true)
+        (activity as AppCompatActivity).supportActionBar?.title = selectedName ?: "Article"
+
+        // Observe the list of articles from the ViewModel
+        viewModel.message3.observe(viewLifecycleOwner) { articles ->
+            // Find the specific article that matches the selectedName
+            val article = articles.find { it.data?.get("title") == selectedName }
+
+            if (article != null) {
+                val dataMap = article.data
+                if (dataMap != null) {
+                    val attributes = dataMap["attributes"] as? Map<*, *>
+                    val diseases = dataMap["diseases"] as? List<*>
+                    val images = dataMap["images"] as? List<*>
+
+                    // Use the data to populate the views via binding
+                    binding.titleTextFruitFragArt.text = dataMap["title"]?.toString() ?: "N/A"
+                    binding.descTextValueFruitFragArt.text = dataMap["description"]?.toString() ?: "N/A"
+                    binding.processTextValueFruitFragArt.text = dataMap["process"]?.toString() ?: "N/A"
+                    binding.soilTextValueFruitFragArt.text = dataMap["soil"]?.toString() ?: "N/A"
+                    binding.stateTextValueFruitFragArt.text = dataMap["state"]?.toString() ?: "N/A"
+
+                    binding.tempTextFruitFragArt.text = attributes?.get("Temperature")?.toString() ?: "N/A"
+                    binding.monthTextFruitFragArt.text = attributes?.get("Time")?.toString() ?: "N/A"
+                    binding.attr1ValueFruitFragArt.text = attributes?.get("Weight")?.toString() ?: "N/A"
+                    binding.attr2ValueFruitFragArt.text = attributes?.get("Vitamins")?.toString() ?: "N/A"
+                    binding.attr3ValueFruitFragArt.text = attributes?.get("Tree Height")?.toString() ?: "N/A"
+                    binding.attr4ValueFruitFragArt.text = attributes?.get("growthTime")?.toString() ?: "N/A"
+
+                    val diseaseText = diseases?.filterIsInstance<String>()?.withIndex()?.joinToString("\n") {
+                        "${it.index + 1}. ${it.value}"
+                    } ?: "N/A"
+                    binding.diseaseTextValueFruitFragArt.text = diseaseText
+
+                    val imageUrl = images?.firstOrNull()?.toString()
+                    if (!imageUrl.isNullOrEmpty()) {
+                        Glide.with(this).load(imageUrl).into(binding.imageFruitFragArt)
+                    }
+                }
             }
         }
 
+        binding.descToggleBtnFruitFragArt.setOnClickListener {
+            val isExpanded = binding.descTextValueFruitFragArt.maxLines == Int.MAX_VALUE
+            binding.descTextValueFruitFragArt.maxLines = if (isExpanded) 3 else Int.MAX_VALUE
+
+            val rotateAnim = RotateAnimation(
+                if (isExpanded) 180f else 0f,
+                if (isExpanded) 0f else 180f,
+                RotateAnimation.RELATIVE_TO_SELF, 0.5f,
+                RotateAnimation.RELATIVE_TO_SELF, 0.5f
+            ).apply {
+                duration = 200
+                fillAfter = true
+            }
+            binding.descToggleBtnFruitFragArt.startAnimation(rotateAnim)
+        }
     }
 
-    override fun onStarted() {
-        TODO("Not yet implemented")
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
-    override fun onSuccess(authRepo: LiveData<String>) {
-        authRepo.observe(viewLifecycleOwner, Observer {
-            Log.d("Fruit", "Success")
-        })
-    }
-
-    override fun onFailure(message: String) {
-        TODO("Not yet implemented")
+    companion object {
+        @JvmStatic
+        fun newInstance(name: String) = FruitsFragment().apply {
+            arguments = Bundle().apply {
+                putString("name", name)
+            }
+        }
     }
 }

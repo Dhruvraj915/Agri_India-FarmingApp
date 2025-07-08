@@ -1,7 +1,6 @@
 package com.project.farmingapp.model
 
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -16,6 +15,7 @@ class AuthRepository {
     val firebaseAuth = FirebaseAuth.getInstance()
     lateinit var firebaseDb: FirebaseFirestore
     val data = MutableLiveData<String>()
+
     fun signInWithEmail(
         email: String,
         password: String,
@@ -23,28 +23,27 @@ class AuthRepository {
     ): LiveData<String> {
 
         firebaseDb = FirebaseFirestore.getInstance()
-
         val data2 = MutableLiveData<String>()
+
         firebaseAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
             if (it.isSuccessful) {
-                firebaseDb!!.collection("users").document("${email}")
+                firebaseDb.collection("users").document(email)
                     .set(otherData)
                     .addOnSuccessListener {
                         data.value = "Success"
                     }
-                    .addOnFailureListener { Exception ->
-                        {
-                            data.value = "Failure"
-                        }
+                    .addOnFailureListener {
+                        data.value = "Failure"
                     }
 
             } else if (it.isCanceled) {
                 data.value = "Failure"
             }
         }.addOnFailureListener {
-            Log.d("AuthRepo", it.message)
-            data.value = it.message
+            Log.d("AuthRepo", it.message ?: "Unknown error")
+            data.value = it.message ?: "Error occurred"
         }
+
         return data
     }
 
@@ -55,31 +54,28 @@ class AuthRepository {
     ): LiveData<String> {
         firebaseDb = FirebaseFirestore.getInstance()
         val credential = GoogleAuthProvider.getCredential(idToken, null)
-        firebaseAuth!!.signInWithCredential(credential)
+
+        firebaseAuth.signInWithCredential(credential)
             .addOnCompleteListener {
                 if (it.isSuccessful) {
-                    val userDocRef = firebaseDb!!.collection("users").document("${email}")
+                    val userDocRef = firebaseDb.collection("users").document(email)
 
-                    userDocRef.get().addOnSuccessListener {
+                    userDocRef.get().addOnSuccessListener { document ->
                         data.value = "Success"
-                        if(it.exists()){
+                        if (document.exists()) {
                             Log.d("User", "User Exists")
-                        } else{
-                            Log.d("User", "User Does not Exists")
-                            firebaseDb!!.collection("users").document("${email}")
-                                .set(otherData)
+                        } else {
+                            Log.d("User", "User Does not Exist")
+                            userDocRef.set(otherData)
                                 .addOnSuccessListener {
                                     data.value = "Success"
                                 }
-                                .addOnFailureListener { Exception ->
-                                    {
-                                        data.value = "Failure"
-                                    }
+                                .addOnFailureListener {
+                                    data.value = "Failure"
                                 }
                         }
                     }
 
-                    val user = firebaseAuth!!.currentUser
                 } else {
                     data.value = "Failure"
                 }
@@ -88,28 +84,24 @@ class AuthRepository {
         return data
     }
 
-
-    //login
     fun logInWithEmail(
         email: String,
         password: String
     ): LiveData<String> {
-
         firebaseDb = FirebaseFirestore.getInstance()
-
         val data = MutableLiveData<String>()
+
         firebaseAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener {
             if (it.isSuccessful) {
                 data.value = "Success"
-
             } else if (it.isCanceled) {
                 data.value = "Failure"
             }
-
         }.addOnFailureListener {
-            Log.d("AuthRepo", it.message)
-            data.value = it.message
+            Log.d("AuthRepo", it.message ?: "Unknown error")
+            data.value = it.message ?: "Error occurred"
         }
+
         return data
     }
 }

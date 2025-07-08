@@ -3,20 +3,26 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-kapt'
     id 'androidx.navigation.safeargs'
+    id 'com.google.gms.google-services' // ✅ Required for Firebase
 }
 
 android {
     namespace 'com.project.farmingapp'
-    compileSdk 35
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.project.farmingapp"
-        minSdk 21
-        targetSdk 35
+        minSdk 23 // ✅ Corrected: only one minSdk line
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        dataBinding true
+        viewBinding true
     }
 
     buildTypes {
@@ -24,11 +30,6 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-    }
-
-    buildFeatures {
-        dataBinding true
-        viewBinding true
     }
 
     compileOptions {
@@ -39,6 +40,7 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
+
     packagingOptions {
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/LICENSE.txt'
@@ -51,18 +53,13 @@ android {
     }
 }
 
-/*repositories {
-    google()
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
-    flatDir {
-        dirs 'libs'
-    }
-}*/
-
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
+
+
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.firebase:firebase-firestore:24.10.0'
 
     // AndroidX & UI
     implementation 'androidx.core:core-ktx:1.13.1'
@@ -71,18 +68,16 @@ dependencies {
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
-    implementation platform('com.google.firebase:firebase-bom:32.7.4')
-
+    // Firebase (BOM handles versions)
+    implementation platform('com.google.firebase:firebase-bom:33.1.1')
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-database'
     implementation 'com.google.firebase:firebase-storage'
 
-
     // Google Play Services
     implementation 'com.google.android.gms:play-services-auth:20.7.0'
     implementation 'com.google.android.gms:play-services-location:21.2.0'
-    implementation 'com.google.firebase:firebase-database:21.0.0'
 
     // Unit Testing
     testImplementation 'junit:junit:4.13.2'
@@ -110,7 +105,7 @@ dependencies {
     implementation 'androidx.room:room-ktx:2.6.1'
     kapt 'androidx.room:room-compiler:2.6.1'
 
-    // DI with Kodein
+    // Kodein DI
     implementation 'org.kodein.di:kodein-di:7.20.2'
     implementation 'org.kodein.di:kodein-di-framework-android-x:7.20.2'
 
@@ -119,23 +114,22 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
 
-    // Carousel/Stack UI
- //1.   implementation 'com.littlemango:stacklayoutmanager:1.0.5'
- //2.   implementation 'com.azoft.carousellayoutmanager:carousel:1.4.4'
+    // PosterSlider
     implementation 'com.github.mohan-dev1248:PosterSlider:1.0.2'
-
-    // ButterKnife (deprecated but included)
-    implementation "com.jakewharton:butterknife:10.2.3"
-    annotationProcessor "com.jakewharton:butterknife-compiler:10.2.3"
 
     // Razorpay
     implementation 'com.razorpay:checkout:1.6.33'
 
-    // Use a newer ExoPlayer version available on Maven Central
+    // ExoPlayer (for video posts or streaming)
     implementation 'com.google.android.exoplayer:exoplayer:2.18.7'
 
-    implementation('com.github.mohan-dev1248:PosterSlider:1.0.2') {
-        exclude group: 'com.google.android.exoplayer'
-    }
+    /*// ButterKnife (deprecated - consider migrating)
+    implementation "com.jakewharton:butterknife:10.2.3"
+    annotationProcessor "com.jakewharton:butterknife-compiler:10.2.3"*/
 
+    implementation 'com.google.firebase:firebase-firestore-ktx:24.10.0'
+    implementation 'com.github.bumptech.glide:glide:4.12.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
+
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity:16.0.0'
 }

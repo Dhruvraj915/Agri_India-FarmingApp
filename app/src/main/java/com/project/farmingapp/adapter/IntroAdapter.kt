@@ -1,38 +1,34 @@
 package com.project.farmingapp.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.project.farmingapp.R
+import com.project.farmingapp.databinding.SingleSliderScreenBinding
 import com.project.farmingapp.model.data.IntroData
 
-class IntroAdapter(private val introSlides: List<IntroData>): RecyclerView.Adapter<IntroAdapter.IntroViewHolder>() {
-    inner class IntroViewHolder(view: View) : RecyclerView.ViewHolder(view){
+class IntroAdapter(private val introSlides: List<IntroData>) :
+    RecyclerView.Adapter<IntroAdapter.IntroViewHolder>() {
 
-        private val textTitle = view.findViewById<TextView>(R.id.sliderTitle)
-        private val textDescription = view.findViewById<TextView>(R.id.sliderDescription)
-        private val imageIcon = view.findViewById<ImageView>(R.id.imageSlider)
+    inner class IntroViewHolder(val binding: SingleSliderScreenBinding) :
+        RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(introSlider: IntroData){
-            textTitle.text = introSlider.title
-            textDescription.text = introSlider.description
-            imageIcon.setImageResource(introSlider.image)
-
+        fun bind(introSlider: IntroData) {
+            binding.sliderTitle.text = introSlider.title
+            binding.sliderDescription.text = introSlider.description
+            binding.imageSlider.setImageResource(introSlider.image)
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): IntroViewHolder {
-        return IntroViewHolder(
-            LayoutInflater.from(parent.context).inflate(R.layout.single_slider_screen, parent, false)
+        val binding = SingleSliderScreenBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
         )
+        return IntroViewHolder(binding)
     }
 
-    override fun getItemCount(): Int {
-        return introSlides.size
-    }
+    override fun getItemCount(): Int = introSlides.size
 
     override fun onBindViewHolder(holder: IntroViewHolder, position: Int) {
         holder.bind(introSlides[position])

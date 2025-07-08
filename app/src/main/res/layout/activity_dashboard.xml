@@ -1,36 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<layout  xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <data
-        >
-        <variable
-            name="userDataViewModel"
-            type="com.project.farmingapp.viewmodel.UserDataViewModel" />
-    </data>
+<!--
+    The root is a DrawerLayout.
+    Data Binding is NOT needed for this activity layout.
+-->
 <androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/drawerLayout"
-    tools:openDrawer="start"
-    >
+    tools:openDrawer="start">
 
-    <include
-        layout="@layout/app_bar_main"
+    <!-- This ConstraintLayout correctly positions all the main screen content. -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
 
+        <!-- This single include is for your Toolbar -->
+        <include
+            android:id="@+id/appBarDashboard"
+            layout="@layout/app_bar_main"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!--
+            THIS IS THE FRAGMENT CONTAINER.
+            It has the ID "main_content_frame" and correctly fills the space.
+        -->
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/main_content_frame"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/appBarDashboard"
+            app:layout_constraintBottom_toTopOf="@id/bottomNav"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Bottom Navigation Bar at the bottom -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNav"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/windowBackground"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:menu="@menu/bottom_nav_menu" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Navigation Drawer View (this is correct) -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navView"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="#fff"
         android:fitsSystemWindows="true"
-        
         app:headerLayout="@layout/nav_header"
         app:menu="@menu/nav_drawer_menu" />
+
 </androidx.drawerlayout.widget.DrawerLayout>
-</layout>

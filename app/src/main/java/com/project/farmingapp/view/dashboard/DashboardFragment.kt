@@ -1,209 +1,117 @@
 package com.project.farmingapp.view.dashboard
 
-import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.gson.JsonObject
+import com.google.firebase.database.FirebaseDatabase
 import com.project.farmingapp.R
-import com.project.farmingapp.adapter.DashboardEcomItemAdapter
-import com.project.farmingapp.model.WeatherApi
-import com.project.farmingapp.model.data.WeatherRootList
-import com.project.farmingapp.utilities.CellClickListener
-import com.project.farmingapp.view.articles.ArticleListFragment
-import com.project.farmingapp.view.articles.FruitsFragment
-import com.project.farmingapp.view.ecommerce.EcommerceItemFragment
-import com.project.farmingapp.view.weather.WeatherFragment
-import com.project.farmingapp.view.yojna.YojnaListFragment
-import com.project.farmingapp.viewmodel.ArticleViewModel
-import com.project.farmingapp.viewmodel.EcommViewModel
-import com.project.farmingapp.viewmodel.WeatherViewModel
-import kotlinx.android.synthetic.main.fragment_dashboard.*
-import org.json.JSONObject
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import kotlin.random.Random
+import com.project.farmingapp.view.Home.DashboardItem
 
+// Your Adapter - This code is already correct
+class DashboardEcommItemAdapter(
+    private val items: List<DashboardItem>,
+    private val onCellClickListener: (DashboardItem) -> Unit
+) : RecyclerView.Adapter<DashboardEcommItemAdapter.ViewHolder>() {
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [dashboardFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class dashboardFragment : Fragment(), CellClickListener {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-    lateinit var weatherFragment: WeatherFragment
-    lateinit var fruitsFragment: FruitsFragment
-    lateinit var yojnaListFragment: YojnaListFragment
-    lateinit var articleListFragment: ArticleListFragment
-    private lateinit var viewModel: WeatherViewModel
-    private lateinit var viewModel2: EcommViewModel
-    var data: WeatherRootList? = null
-    lateinit var sharedPreferences: SharedPreferences
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-
-        viewModel = ViewModelProviders.of(requireActivity())
-            .get<WeatherViewModel>(WeatherViewModel::class.java)
-
-        viewModel2 = ViewModelProviders.of(requireActivity())
-            .get<EcommViewModel>(EcommViewModel::class.java)
-
-
-        viewModel2.loadAllEcommItems()
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_dashboard, parent, false)
+        return ViewHolder(view)
     }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = items[position]
+        holder.titleText.text = item.title
+        if (item.imageUrl.isNotEmpty()) {
+            Glide.with(holder.itemView.context)
+                .load(item.imageUrl)
+                .placeholder(R.drawable.ic_launcher_background)
+                .into(holder.imageView)
+        }
+        holder.itemView.setOnClickListener { onCellClickListener(item) }
+    }
+
+    override fun getItemCount(): Int = items.size
+
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val titleText: TextView = itemView.findViewById(R.id.itemTitle)
+        val imageView: ImageView = itemView.findViewById(R.id.itemImage)
+    }
+}
+
+// Your Fragment - This is the updated version
+class DashboardFragment : Fragment() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var errorText: TextView
+    private lateinit var adapter: DashboardEcommItemAdapter
+    private val items = mutableListOf<DashboardItem>()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
+        val view = inflater.inflate(R.layout.fragment_dashboard, container, false)
 
-        viewModel.getCoordinates().observe(viewLifecycleOwner, Observer {
-            Log.d("DashFrag", it.toString())
-            viewModel.updateNewData()
-            val city = it.get(2) as String
-            viewModel.newDataTrial.observe(viewLifecycleOwner, Observer {
+        // Initialize all views from the layout
+        recyclerView = view.findViewById(R.id.recyclerViewDashboard)
+        progressBar = view.findViewById(R.id.progressBar)
+        errorText = view.findViewById(R.id.errorText)
 
-                Log.d("Observed Here", "Yes")
-                weathTempTextWeathFrag.text =
-                    (it.list[0].main.temp - 273).toInt().toString() + "\u2103"
-                humidityTextWeathFrag.text =
-                    "Humidity: " + it!!.list[0].main.humidity.toString() + " %"
-                windTextWeathFrag.text = "Wind: " + it!!.list[0].wind.speed.toString() + " km/hr"
-                weatherCityTitle.text = city.toString()
-                var iconcode = it!!.list[0].weather[0].icon
-                var iconurl = "https://openweathermap.org/img/w/" + iconcode + ".png";
-                Glide.with(activity!!.applicationContext).load(iconurl)
-                    .into(weathIconImageWeathFrag)
-            })
-        })
+        // Setup RecyclerView
+        recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView.isNestedScrollingEnabled = false // Important for smooth scrolling in a NestedScrollView
+        adapter = DashboardEcommItemAdapter(items) { item ->
+            Toast.makeText(context, "Clicked: ${item.title}", Toast.LENGTH_SHORT).show()
+        }
+        recyclerView.adapter = adapter
 
+        // Fetch the data from Firebase
+        fetchDashboardData()
 
-        viewModel2.ecommLiveData.observe(viewLifecycleOwner, Observer {
-            var itemsToShow = (0..it.size - 1).shuffled().take(4) as List<Int>
-            val adapterEcomm =
-                DashboardEcomItemAdapter(activity!!.applicationContext, it, itemsToShow, this)
-            dashboardEcommRecycler.adapter = adapterEcomm
-            dashboardEcommRecycler.layoutManager =
-                GridLayoutManager(activity!!.applicationContext, 2)
-        })
-
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_dashboard, container, false)
+        return view
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    private fun fetchDashboardData() {
+        progressBar.visibility = View.VISIBLE
+        val database = FirebaseDatabase.getInstance().reference
 
-        setHasOptionsMenu(true)
-        (activity as AppCompatActivity).supportActionBar?.title = "Agri India"
+        database.child("Products").get()
+            .addOnSuccessListener { dataSnapshot ->
+                progressBar.visibility = View.GONE
+                items.clear() // Clear old data
 
-        weatherCard.setOnClickListener {
-            weatherFragment = WeatherFragment()
-
-            val transaction = activity!!.supportFragmentManager
-                .beginTransaction()
-                .replace(R.id.frame_layout, weatherFragment, "name2")
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .setReorderingAllowed(true)
-                .addToBackStack("name")
-                .commit()
-            data?.let { it1 -> viewModel.messageToB(it1) }
-        }
-
-        viewModel = ViewModelProviders.of(requireActivity())
-            .get<WeatherViewModel>(WeatherViewModel::class.java)
-
-        viewModel.getMessageA()
-            .observe(viewLifecycleOwner, object : Observer<WeatherRootList?> {
-                override fun onChanged(t: WeatherRootList?) {
-                    Log.d("DashFrag Data Changed A", "B")
+                if (!dataSnapshot.exists() || !dataSnapshot.hasChildren()) {
+                    errorText.text = "No products found in the database."
+                    errorText.visibility = View.VISIBLE
+                    return@addOnSuccessListener
                 }
-            })
 
-
-        cat4.setOnClickListener {
-            yojnaListFragment = YojnaListFragment()
-            val transaction = activity!!.supportFragmentManager
-                .beginTransaction()
-                .replace(R.id.frame_layout, yojnaListFragment, "yojnaListFrag")
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .setReorderingAllowed(true)
-                .addToBackStack("yojnaListFrag")
-                .commit()
-        }
-
-        cat5.setOnClickListener {
-            articleListFragment = ArticleListFragment()
-            val transaction = activity!!.supportFragmentManager
-                .beginTransaction()
-                .replace(R.id.frame_layout, articleListFragment, "articlesListFrag")
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .setReorderingAllowed(true)
-                .addToBackStack("articlesListFrag")
-                .commit()
-        }
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment dashboardFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            dashboardFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+                Log.d("FirebaseRTDB", "✅ Fetched ${dataSnapshot.childrenCount} products")
+                for (snapshot in dataSnapshot.children) {
+                    val name = snapshot.child("name").getValue(String::class.java) ?: "No Name"
+                    val imageUrl = snapshot.child("imageUrl").getValue(String::class.java) ?: ""
+                    items.add(DashboardItem("Product", name, imageUrl))
                 }
+
+                adapter.notifyDataSetChanged()
+                errorText.visibility = View.GONE
             }
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-    }
-
-    override fun onCellClickListener(name: String) {
-        val ecommerceItemFragment = EcommerceItemFragment()
-
-        val transaction = activity!!.supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.frame_layout, ecommerceItemFragment, name)
-            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            .setReorderingAllowed(true)
-            .addToBackStack("name")
-            .commit()
+            .addOnFailureListener { e ->
+                progressBar.visibility = View.GONE
+                errorText.text = "Failed to load data: ${e.message}"
+                errorText.visibility = View.VISIBLE
+                Log.e("FirebaseRTDB", "❌ Error fetching data", e)
+            }
     }
 }

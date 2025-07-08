@@ -2,121 +2,118 @@ package com.project.farmingapp.view.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.project.farmingapp.R
 import com.project.farmingapp.databinding.ActivityLoginBinding
-import com.project.farmingapp.utilities.hide
-import com.project.farmingapp.utilities.show
 import com.project.farmingapp.utilities.toast
 import com.project.farmingapp.view.dashboard.DashboardActivity
 import com.project.farmingapp.viewmodel.AuthListener
 import com.project.farmingapp.viewmodel.AuthViewModel
-import kotlinx.android.synthetic.main.activity_login.*
 
 class LoginActivity : AppCompatActivity(), AuthListener {
-    lateinit var googleSignInClient: GoogleSignInClient
-    val firebaseAuth = FirebaseAuth.getInstance()
-    lateinit var viewModel: AuthViewModel
+
+    private lateinit var binding: ActivityLoginBinding
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var viewModel: AuthViewModel
+    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding: ActivityLoginBinding =
-            DataBindingUtil.setContentView(this, R.layout.activity_login)
-        viewModel = ViewModelProviders.of(this).get(AuthViewModel::class.java)
+
+        binding = ActivityLoginBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        viewModel = ViewModelProvider(this)[AuthViewModel::class.java]
         binding.authViewModel = viewModel
         viewModel.authListener = this
 
-        if (firebaseAuth.currentUser != null) {
-            Intent(this, DashboardActivity::class.java).also {
-                startActivity(it)
-            }
+        // Auto-login if user already signed in
+        firebaseAuth.currentUser?.let {
+            navigateToDashboard()
         }
 
-        createaccountText.setOnClickListener {
-            Intent(this, SignupActivity::class.java).also {
-                startActivity(it)
-            }
+        binding.createaccountText.setOnClickListener {
+            startActivity(Intent(this, SignupActivity::class.java))
         }
-        signGoogleBtnLogin.setOnClickListener {
+
+        binding.signGoogleBtnLogin.setOnClickListener {
             signIn()
         }
 
-        forgotPasswdTextLogin.setOnClickListener {
-            val userEmail = emailEditLogin.text.toString()
-            if (userEmail.isNullOrEmpty()) {
+        binding.forgotPasswdTextLogin.setOnClickListener {
+            val email = binding.emailEditLogin.text.toString()
+            if (email.isEmpty()) {
                 Toast.makeText(this, "Please enter your Email", Toast.LENGTH_SHORT).show()
             } else {
-//                Toast.makeText(this, "Please enter your Email", Toast.LENGTH_SHORT).show()
-                firebaseAuth.sendPasswordResetEmail(userEmail)
-                    .addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            Toast.makeText(this, "Email Sent", Toast.LENGTH_LONG).show()
-                        }
+                firebaseAuth.sendPasswordResetEmail(email)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "Reset email sent!", Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener {
-                        Toast.makeText(this, it.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, it.message ?: "Failed to send email", Toast.LENGTH_SHORT).show()
                     }
             }
         }
-
     }
 
-
-    //googlesignIn
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        viewModel.returnActivityResult(requestCode, resultCode, data)
-    }
-
-    fun signIn() {
+    private fun signIn() {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
-        val signInIntent = googleSignInClient.signInIntent
-        startActivityForResult(signInIntent, RC_SIGN_IN)
+        startActivityForResult(googleSignInClient.signInIntent, RC_SIGN_IN)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        viewModel.returnActivityResult(requestCode, resultCode, data)
     }
 
     override fun onBackPressed() {
         super.onBackPressed()
-        val a = Intent(Intent.ACTION_MAIN)
-        a.addCategory(Intent.CATEGORY_HOME)
-        a.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(a)
-    }
-    companion object {
-        private const val TAG = "GoogleActivity"
-        private const val RC_SIGN_IN = 9001
+        // Exit app
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(intent)
     }
 
     override fun onStarted() {
-        progressLogin.show()
+        binding.progressLogin.visibility = View.VISIBLE
     }
 
     override fun onSuccess(authRepo: LiveData<String>) {
-        authRepo.observe(this, Observer {
-            progressLogin.hide()
-            if (it.toString() == "Success") {
+        authRepo.observe(this) {
+            binding.progressLogin.visibility = View.GONE
+            if (it == "Success") {
                 toast("Logged In")
-                Toast.makeText(this, it.toString(), Toast.LENGTH_LONG).show()
-                Intent(this, DashboardActivity::class.java).also {
-                    startActivity(it)
-                }
+                navigateToDashboard()
             }
-        })
+        }
     }
 
     override fun onFailure(message: String) {
-        progressLogin.hide()
-        toast("Failure")
+        binding.progressLogin.visibility = View.GONE
+        toast("Login failed: $message")
+    }
+
+    private fun navigateToDashboard() {
+        startActivity(Intent(this, DashboardActivity::class.java))
+        finish()
+    }
+
+    companion object {
+        private const val RC_SIGN_IN = 9001
     }
 }
