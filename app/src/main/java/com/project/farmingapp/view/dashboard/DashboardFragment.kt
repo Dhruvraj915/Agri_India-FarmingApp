@@ -14,19 +14,19 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore // Import Firestore
 import com.project.farmingapp.R
+import com.project.farmingapp.view.ecommerce.EcommerceItemFragment
 import com.project.farmingapp.viewmodel.WeatherViewModel
 
-// STEP 1: Update your data class to hold the unique ID of each product.
-// You should move this to its own file (e.g., DashboardItem.kt) eventually.
+// Data class for items shown in the dashboard's product list
 data class DashboardItem(
-    val id: String,
+    val id: String,       // Firestore Document ID
     val title: String,
     val imageUrl: String
 )
 
-// Your Adapter - This code is already correct
+// The Adapter for the dashboard's product list
 class DashboardEcommItemAdapter(
     private val items: List<DashboardItem>,
     private val onCellClickListener: (DashboardItem) -> Unit
@@ -58,83 +58,55 @@ class DashboardEcommItemAdapter(
     }
 }
 
-// Your Fragment - This is the final, updated version
+
+// The Main Dashboard Fragment Class
 class DashboardFragment : Fragment() {
 
-    // ViewModels
     private lateinit var weatherViewModel: WeatherViewModel
-
-    // UI Components
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
-
-    // RecyclerView components
     private lateinit var adapter: DashboardEcommItemAdapter
     private val items = mutableListOf<DashboardItem>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_dashboard, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize the ViewModels. We get them from the Activity to share data.
+        // Initialize ViewModel from the parent Activity
         weatherViewModel = ViewModelProvider(requireActivity())[WeatherViewModel::class.java]
 
-        // Setup all the different parts of the UI
+        // Setup the different UI sections of the screen
         setupWeatherCard(view)
         setupProductList(view)
 
-        // Fetch the product data from Firebase
-        fetchDashboardData()
+        // Fetch product data from Firestore
+        fetchDashboardDataFromFirestore()
     }
 
-    // In DashboardFragment.kt
-
-    // In DashboardFragment.kt
-
     private fun setupWeatherCard(view: View) {
-        // Find all the UI elements from the layout
         val cityTitle = view.findViewById<TextView>(R.id.weatherCityTitle)
         val tempText = view.findViewById<TextView>(R.id.weathTempTextWeathFrag)
         val windText = view.findViewById<TextView>(R.id.windTextWeathFrag)
         val humidityText = view.findViewById<TextView>(R.id.humidityTextWeathFrag)
         val weatherIcon = view.findViewById<ImageView>(R.id.weathIconImageWeathFrag)
 
-        // THE FIX: We now observe the 'weatherData' LiveData from our new ViewModel.
         weatherViewModel.weatherData.observe(viewLifecycleOwner) { weatherRootList ->
-
-            // Check if the received data is valid
             if (weatherRootList != null && weatherRootList.list.isNotEmpty()) {
-
-                // Get the first forecast from the list (which is the most current one)
                 val currentForecast = weatherRootList.list[0]
-
-                Toast.makeText(requireContext(), "Weather Updated: ${weatherRootList.city.name}", Toast.LENGTH_SHORT).show()
-
-                // Update all the TextViews with the new data
                 cityTitle.text = weatherRootList.city.name
                 tempText.text = "${currentForecast.main.temp.toInt()}°C"
                 windText.text = "Wind: ${currentForecast.wind.speed} km/h"
                 humidityText.text = "Humidity: ${currentForecast.main.humidity}%"
 
-                // Get the weather icon code (e.g., "01d") and build the full URL
                 val iconCode = currentForecast.weather[0].icon
                 val iconUrl = "https://openweathermap.org/img/wn/$iconCode@2x.png"
-
-                // Use Glide to load the weather icon from the URL into your ImageView
-                Glide.with(this)
-                    .load(iconUrl)
-                    .into(weatherIcon)
-
-            } else {
-                // This will be called if the data is null or the list is empty
-                Log.d("DashboardFragment", "Weather data received but it was null or empty.")
+                Glide.with(this).load(iconUrl).into(weatherIcon)
             }
         }
     }
@@ -144,62 +116,55 @@ class DashboardFragment : Fragment() {
         progressBar = view.findViewById(R.id.progressBar)
         errorText = view.findViewById(R.id.errorText)
 
-        recyclerView.layoutManager = LinearLayoutManager(context)
-        recyclerView.isNestedScrollingEnabled = false // Important for smooth scrolling
+        // The product list on the dashboard is horizontal
+        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        recyclerView.isNestedScrollingEnabled = false
 
-        // STEP 2: Update the click listener to navigate to a new fragment
         adapter = DashboardEcommItemAdapter(items) { clickedItem ->
-            Log.d("DashboardFragment", "Clicked on product with ID: ${clickedItem.id}")
+            Log.d("DashboardFragment", "Navigating to product with ID: ${clickedItem.id}")
 
-            // TODO: Create a new Fragment called "ProductDetailFragment"
-            // val productDetailFragment = ProductDetailFragment.newInstance(clickedItem.id)
+            // Use your existing EcommerceItemFragment
+            val ecommerceItemFragment = EcommerceItemFragment.newInstance(clickedItem.id)
 
-            // requireActivity().supportFragmentManager.beginTransaction()
-            //     .replace(R.id.main_content_frame, productDetailFragment)
-            //     .addToBackStack(null) // Allows user to press back to return here
-            //     .commit()
-
-            Toast.makeText(context, "Navigating to details for ${clickedItem.title}", Toast.LENGTH_SHORT).show()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.main_content_frame, ecommerceItemFragment)
+                .addToBackStack(null) // Allows user to press back to return here
+                .commit()
         }
         recyclerView.adapter = adapter
     }
 
-    private fun fetchDashboardData() {
+    private fun fetchDashboardDataFromFirestore() {
         progressBar.visibility = View.VISIBLE
-        val database = FirebaseDatabase.getInstance().reference
+        val firestore = FirebaseFirestore.getInstance()
 
-        database.child("Products").get()
-            .addOnSuccessListener { dataSnapshot ->
+        firestore.collection("E-commerce").get()
+            .addOnSuccessListener { querySnapshot ->
                 progressBar.visibility = View.GONE
                 items.clear()
 
-                if (!dataSnapshot.exists() || !dataSnapshot.hasChildren()) {
-                    errorText.text = "No products found in the database."
+                if (querySnapshot.isEmpty) {
+                    errorText.text = "No products found."
                     errorText.visibility = View.VISIBLE
                     return@addOnSuccessListener
                 }
 
-                Log.d("FirebaseRTDB", "✅ Fetched ${dataSnapshot.childrenCount} products")
-                for (snapshot in dataSnapshot.children) {
-                    // STEP 3: Get the product's unique key (e.g., "prod1", "prod2")
-                    val id = snapshot.key ?: ""
-                    val name = snapshot.child("name").getValue(String::class.java) ?: "No Name"
-                    val imageUrl = snapshot.child("imageUrl").getValue(String::class.java) ?: ""
+                for (document in querySnapshot.documents) {
+                    val id = document.id
+                    val name = document.getString("title") ?: "No Name"
+                    val imageUrls = document.get("imageUrl") as? List<String>
+                    val firstImageUrl = imageUrls?.firstOrNull() ?: ""
 
-                    // Add the item with its ID to the list
-                    if (id.isNotEmpty()) {
-                        items.add(DashboardItem(id, name, imageUrl))
-                    }
+                    items.add(DashboardItem(id, name, firstImageUrl))
                 }
-
                 adapter.notifyDataSetChanged()
                 errorText.visibility = View.GONE
             }
             .addOnFailureListener { e ->
                 progressBar.visibility = View.GONE
-                errorText.text = "Failed to load data: ${e.message}"
+                errorText.text = "Failed to load products: ${e.message}"
                 errorText.visibility = View.VISIBLE
-                Log.e("FirebaseRTDB", "❌ Error fetching data", e)
+                Log.e("DashboardFragment", "Error fetching from Firestore", e)
             }
     }
 }
