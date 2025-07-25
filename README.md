@@ -1,4 +1,4 @@
-# 👨‍🌾 Agri India - One-Stop Solution for Indian Farmers
+# Agri India - One-Stop Solution for Indian Farmers
 
 **Agri India** is a comprehensive Android application built with the goal of empowering Indian farmers through smart technology. While technology has deeply impacted our daily lives, the agriculture sector still lacks easy access to reliable digital solutions. This app aims to bridge that gap.
 
@@ -6,18 +6,18 @@ Despite the presence of many farming apps in the market, most offer limited func
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-- 🏛️ **Government Yojana Awareness** – Stay informed about the latest government schemes.
-- 🛒 **E-commerce for Farmers** – Buy and sell agricultural products directly.
-- 📊 **Daily APMC Price Updates** – Get real-time mandi prices across regions.
-- 🤝 **Farmer Community Network** – Social media-like interaction for farmers.
-- 📚 **Curated Articles** – Educational content based on crop, season, and category.
-- 🌦️ **Weather Forecasting** – Location-based forecasts to plan farming activities.
+- **Government Yojana Awareness** – Stay informed about the latest government schemes.
+- **E-commerce for Farmers** – Buy and sell agricultural products directly.
+- **Daily APMC Price Updates** – Get real-time mandi prices across regions.
+- **Farmer Community Network** – Social media-like interaction for farmers.
+- **Curated Articles** – Educational content based on crop, season, and category.
+- **Weather Forecasting** – Location-based forecasts to plan farming activities.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Technology     | Purpose                                  |
 |----------------|------------------------------------------|
@@ -29,13 +29,9 @@ Despite the presence of many farming apps in the market, most offer limited func
 
 ---
 
-## ⭐ Support
+## Support
 
 If you like the project, feel free to:
-- ⭐ Star the repo
-- 🍴 Fork it to explore or contribute
-- 📣 Share with others in the farming/tech community
-
----
-
-> 🚜 *Agri India is built with love to empower the heart of our nation — our farmers.* 🇮🇳
+- Star the repo
+- Fork it to explore or contribute
+- Share with others in the farming/tech community
